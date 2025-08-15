@@ -1,29 +1,31 @@
-async function grok_image_generator(params, userSettings) {
-  // Validate API key
-  if (!userSettings.xaiApiKey) {
-    return 'Error: xAI API key is required. Please set it in User Settings.';
-  }
-
-  // Extract parameters with defaults
+async function grok_image_generator(params, userSettings, authorizedResources) {
   const prompt = params.prompt;
+  const xaiApiKey = userSettings.xaiApiKey;
   const n = params.n || parseInt(userSettings.defaultImageCount) || 1;
+
+  if (!xaiApiKey) {
+    throw new Error(
+      'No xAI API key provided to the Grok Image Generator plugin. Please enter your xAI API key in the plugin settings and try again.'
+    );
+  }
 
   // Validate parameters
   if (!prompt) {
-    return 'Error: Prompt is required for image generation';
+    throw new Error('Prompt is required for image generation');
   }
 
   if (n < 1 || n > 4) {
-    return 'Error: Number of images must be between 1 and 4';
+    throw new Error('Number of images must be between 1 and 4');
   }
 
-  // Prepare the API request (removed size parameter as it's not supported)
+  // Prepare the API request with base64 response format
   const apiUrl = 'https://api.x.ai/v1/images/generations';
   
   const requestBody = {
     model: "grok-2-image",
     prompt: prompt,
-    n: n
+    n: n,
+    response_format: "b64_json"
   };
 
   try {
@@ -32,66 +34,62 @@ async function grok_image_generator(params, userSettings) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userSettings.xaiApiKey}`
+        'Authorization': `Bearer ${xaiApiKey}`
       },
       body: JSON.stringify(requestBody)
     });
 
-    // Get response text first to see what we received
-    const responseText = await response.text();
-
     // Check if response is ok
+    if (response.status === 401) {
+      throw new Error('Invalid xAI API Key. Please check your settings.');
+    }
+
     if (!response.ok) {
+      const errorText = await response.text();
       let errorMessage = `API request failed with status ${response.status}`;
       
       try {
-        const errorData = JSON.parse(responseText);
+        const errorData = JSON.parse(errorText);
         if (errorData.error) {
           errorMessage += `: ${errorData.error}`;
         }
       } catch (e) {
-        errorMessage += `: ${responseText}`;
+        errorMessage += `: ${errorText}`;
       }
       
-      return `Error: ${errorMessage}`;
+      throw new Error(errorMessage);
     }
 
     // Parse the response
-    let data;
-    try {
-      data = JSON.parse(responseText);
-    } catch (e) {
-      return `Error: Invalid JSON response: ${responseText}`;
+    const data = await response.json();
+
+    // Check if we have valid image data
+    if (!data.data || data.data.length === 0) {
+      throw new Error('No images were generated. Please try again.');
     }
 
-    // Format the output
-    if (data.data && data.data.length > 0) {
-      let output = `Successfully generated ${data.data.length} image(s) for prompt: "${prompt}"\n\n`;
-      
-      data.data.forEach((image, index) => {
-        if (image.url) {
-          output += `**Image ${index + 1}:**\n`;
-          output += `![Generated Image ${index + 1}](${image.url})\n`;
-          output += `[Direct Link](${image.url})\n\n`;
-        } else if (image.b64_json) {
-          // Handle base64 encoded images if returned
-          output += `**Image ${index + 1}:** (Base64 encoded - display not supported in markdown)\n\n`;
-        }
-      });
-
-      // Add metadata if available
-      if (data.created) {
-        const date = new Date(data.created * 1000);
-        output += `\n---\n*Generated at: ${date.toLocaleString()}*`;
+    // Create cards for each generated image
+    const cards = data.data.map((image, index) => {
+      if (!image.b64_json) {
+        throw new Error(`Image ${index + 1} does not contain base64 data`);
       }
 
-      return output;
-    } else {
-      return `Error: No images were generated. Response: ${responseText}`;
-    }
+      return {
+        type: 'image',
+        image: {
+          url: `data:image/jpeg;base64,${image.b64_json}`,
+          alt: prompt.replace(/[\[\]]/g, ''),
+          sync: true,
+        },
+      };
+    });
+
+    return {
+      cards: cards
+    };
 
   } catch (error) {
-    return `Error: Network or fetch error: ${error.message}`;
+    // Re-throw the error to be handled by TypingMind
+    throw error;
   }
 }
-
