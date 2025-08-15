@@ -11,14 +11,9 @@ This plugin integrates xAI's powerful Grok image generation capabilities directl
 - Sign up or log in to your xAI account
 - Generate an API key
 
-## Examples
+## Example usages
 
-### Single Image
 ```
-User: Create an image of a cozy coffee shop
-```
-
-### Multiple Images
-```
-User: Generate 2 images of different dog breeds playing in a park
+Create an image of a cozy coffee shop
+Generate a picture of a golden retriever
 ```
