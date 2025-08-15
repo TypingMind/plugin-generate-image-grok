@@ -1,0 +1,47 @@
+{
+  "uuid": "grok-image-gen-plugin-2025",
+  "id": "generate_image_grok",
+  "emoji": "🎨",
+  "title": "Generate Image Grok",
+  "iconURL": "https://raw.githubusercontent.com/TypingMind/plugin-generate-image-grok/refs/heads/main/icon.webp",
+  "overviewMarkdown": "## Generate Image Grok\n\nGenerate stunning images using xAI's Grok image generation model. This plugin allows you to create images from text descriptions using the powerful grok-2-image model.\n\n### Features:\n- Generate high-quality images from text prompts\n- Support for multiple images per request\n- Fast generation using xAI's latest model\n\n### How to use:\n1. Enable the plugin in your conversation\n2. Set your xAI API key in User Settings\n3. Use commands like: \"Generate an image of a sunset over mountains\"\n4. The AI will automatically call the plugin when image generation is needed\n\n### Examples:\n- \"Create an image of a futuristic city\"\n- \"Generate a portrait of a cat wearing a hat\"\n- \"Make 3 images of a beach at sunset\"\n\n### Pricing:\n- $0.30 per image generation request (charged by xAI)\n- Get your API key from [https://console.x.ai](https://console.x.ai)",
+  "openaiSpec": {
+    "name": "generate_image_grok",
+    "description": "Generate images using xAI's Grok image generation model based on text descriptions",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "prompt": {
+          "type": "string",
+          "description": "A detailed text description of the image to generate"
+        },
+        "n": {
+          "type": "integer",
+          "description": "Number of images to generate (1-4)",
+          "minimum": 1,
+          "maximum": 4,
+          "default": 1
+        }
+      },
+      "required": ["prompt"]
+    }
+  },
+  "userSettings": [
+    {
+      "name": "xaiApiKey",
+      "label": "xAI API Key",
+      "description": "Your xAI API key for authentication. Get it from https://console.x.ai",
+      "type": "password",
+      "required": true
+    },
+    {
+      "name": "defaultImageCount",
+      "label": "Default Image Count",
+      "description": "Number of images to generate by default (1-4). Enter a number between 1 and 4.",
+      "type": "number",
+      "required": false
+    }
+  ],
+  "code": "// Main function that TypingMind calls\nasync function generate_image_grok(params, userSettings) {\n  // Validate API key\n  if (!userSettings.xaiApiKey) {\n    return 'Error: xAI API key is required. Please set it in User Settings.';\n  }\n\n  // Extract parameters with defaults\n  const prompt = params.prompt;\n  const n = params.n || parseInt(userSettings.defaultImageCount) || 1;\n\n  // Validate parameters\n  if (!prompt) {\n    return 'Error: Prompt is required for image generation';\n  }\n\n  if (n < 1 || n > 4) {\n    return 'Error: Number of images must be between 1 and 4';\n  }\n\n  // Prepare the API request (removed size parameter as it's not supported)\n  const apiUrl = 'https://api.x.ai/v1/images/generations';\n  \n  const requestBody = {\n    model: \"grok-2-image\",\n    prompt: prompt,\n    n: n\n  };\n\n  try {\n    // Make the API request\n    const response = await fetch(apiUrl, {\n      method: 'POST',\n      headers: {\n        'Content-Type': 'application/json',\n        'Authorization': `Bearer ${userSettings.xaiApiKey}`\n      },\n      body: JSON.stringify(requestBody)\n    });\n\n    // Get response text first to see what we received\n    const responseText = await response.text();\n\n    // Check if response is ok\n    if (!response.ok) {\n      let errorMessage = `API request failed with status ${response.status}`;\n      \n      try {\n        const errorData = JSON.parse(responseText);\n        if (errorData.error) {\n          errorMessage += `: ${errorData.error}`;\n        }\n      } catch (e) {\n        errorMessage += `: ${responseText}`;\n      }\n      \n      return `Error: ${errorMessage}`;\n    }\n\n    // Parse the response\n    let data;\n    try {\n      data = JSON.parse(responseText);\n    } catch (e) {\n      return `Error: Invalid JSON response: ${responseText}`;\n    }\n\n    // Format the output\n    if (data.data && data.data.length > 0) {\n      let output = `Successfully generated ${data.data.length} image(s) for prompt: \"${prompt}\"\\n\\n`;\n      \n      data.data.forEach((image, index) => {\n        if (image.url) {\n          output += `**Image ${index + 1}:**\\n`;\n          output += `![Generated Image ${index + 1}](${image.url})\\n`;\n          output += `[Direct Link](${image.url})\\n\\n`;\n        } else if (image.b64_json) {\n          // Handle base64 encoded images if returned\n          output += `**Image ${index + 1}:** (Base64 encoded - display not supported in markdown)\\n\\n`;\n        }\n      });\n\n      // Add metadata if available\n      if (data.created) {\n        const date = new Date(data.created * 1000);\n        output += `\\n---\\n*Generated at: ${date.toLocaleString()}*`;\n      }\n\n      return output;\n    } else {\n      return `Error: No images were generated. Response: ${responseText}`;\n    }\n\n  } catch (error) {\n    return `Error: Network or fetch error: ${error.message}`;\n  }\n}\n\n// Execute the function and handle the result\n(async () => {\n  try {\n    const result = await generate_image_grok(params, userSettings);\n    result;\n  } catch (error) {\n    `Error: ${error.message}`;\n  }\n})();",
+  "syncedAt": null
+}
