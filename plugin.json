@@ -23,7 +23,9 @@
           "default": 1
         }
       },
-      "required": ["prompt"]
+      "required": [
+        "prompt"
+      ]
     }
   },
   "userSettings": [
