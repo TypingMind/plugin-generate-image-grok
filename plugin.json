@@ -2,7 +2,7 @@
     "uuid": "grok-image-gen-plugin-2025",
     "id": "generate_image_grok",
     "emoji": "🎨",
-    "title": "Grok Image Generator",
+    "title": "Generate Image Grok",
     "iconURL": "https://raw.githubusercontent.com/TypingMind/plugin-generate-image-grok/refs/heads/main/icon.webp",
     "overviewMarkdown": "## Grok Image Generator\n\nGenerate stunning images using xAI's Grok image generation model. This plugin allows you to create images from text descriptions using the powerful grok-2-image model.\n\n### Features:\n- Generate high-quality images from text prompts\n- Support for multiple images per request\n- Fast generation using xAI's latest model\n- Images display directly in the chat interface\n\n### How to use:\n1. Enable the plugin in your conversation\n2. Set your xAI API key in User Settings\n3. Use commands like: \"Generate an image of a sunset over mountains\"\n4. The AI will automatically call the plugin when image generation is needed\n\n### Examples:\n- \"Create an image of a futuristic city\"\n- \"Generate a portrait of a cat wearing a hat\"\n- \"Make 3 images of a beach at sunset\"\n\n### Pricing:\n- $0.30 per image generation request (charged by xAI)\n- Get your API key from [https://console.x.ai](https://console.x.ai)",
     "openaiSpec": {
