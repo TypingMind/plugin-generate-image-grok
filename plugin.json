@@ -3,6 +3,7 @@
     "id": "grok_image_generator",
     "emoji": "🎨",
     "title": "Grok Image Generator",
+    "iconURL": "https://raw.githubusercontent.com/TypingMind/plugin-generate-image-grok/refs/heads/main/icon.webp",
     "openaiSpec": {
         "name": "grok_image_generator",
         "description": "Generate images using xAI's Grok image generation model based on text descriptions",
