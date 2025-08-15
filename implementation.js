@@ -1,4 +1,4 @@
-async function grok_image_generator(params, userSettings, authorizedResources) {
+async function generate_image_grok(params, userSettings, authorizedResources) {
   const prompt = params.prompt;
   const xaiApiKey = userSettings.xaiApiKey;
   const n = params.n || parseInt(userSettings.defaultImageCount) || 1;
